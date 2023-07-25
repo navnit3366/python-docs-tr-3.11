@@ -1,0 +1,46 @@
+name: "Wrap All"
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 15 * *"
+
+jobs:
+  wrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set Up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+        # Upgrade pip
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+        # Install dependencies
+      - name: Install dependencies
+        run: python -m pip install --upgrade -r requirements.txt && sudo apt install -y gettext
+
+        # Wrap all po files
+      - name: Wrap
+        run: powrap *.po */*.po
+
+        # Create pull request
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5.0.2
+        with:
+          token: ${{ secrets.BOT_PAT }}
+          commit-message: "Wrap all files on: ${{ github.ref_name }}"
+          branch: ${{ github.ref_name }}-wrapped
+          delete-branch: true
+          committer: python-docs-turkish <python.docs.tr@gmail.com>
+          author: python-docs-turkish <python.docs.tr@gmail.com>
+          title: "Wrap branch: ${{ github.ref_name }}"
+          body: "Wrapped all files on branch: ${{ github.ref_name }}."
+          labels: wrap
+          reviewers: |
+            egeakman
+            ardasak
